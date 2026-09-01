@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BrandSprout } from "@/components/brand-sprout";
 
 /** Wordmark: Programeint = programa + e + mente (abreviado). */
 function BrandWordmark({ className = "" }: { className?: string }) {
@@ -45,15 +45,7 @@ export function LandHero() {
         <div className="land__visual" aria-hidden="true">
           <div className="land__halo" />
           <div className="land__plant-wrap">
-            <Image
-              src="/brand/hero-plant.png?v=sprout-project-2"
-              alt=""
-              width={1024}
-              height={944}
-              priority
-              unoptimized
-              className="land__plant"
-            />
+            <BrandSprout className="land__plant" />
           </div>
         </div>
 

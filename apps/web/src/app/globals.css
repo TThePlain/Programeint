@@ -782,10 +782,13 @@ h3 { font-size: 1.15rem; margin: 0 0 var(--space-2); font-family: var(--font-san
 .auth-hero__plant {
   position: relative;
   z-index: 1;
-  width: 92% !important;
+  width: min(220px, 70%) !important;
   height: auto !important;
   max-height: 260px;
   display: block;
+  margin-inline: auto;
+  color: var(--moss-deep, #2f5d3a);
+}
   margin: 0 auto;
   object-fit: contain;
   object-position: center bottom;
@@ -3296,9 +3299,10 @@ legend {
 .land__plant {
   width: 100% !important;
   height: min(70vh, 620px) !important;
-  object-fit: contain;
-  object-position: center center;
-  filter: none;
+  max-width: 420px;
+  margin-inline: auto;
+  display: block;
+  color: var(--moss-deep, #2f5d3a);
   opacity: 1;
 }
 

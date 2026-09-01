@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { BrandSprout } from "@/components/brand-sprout";
 
 type AuthShellProps = {
   title: string;
@@ -21,15 +21,7 @@ export function AuthShell({ title, subtitle, children }: AuthShellProps) {
         <aside className="auth-hero" aria-label="Identidade">
           <div className="auth-hero__visual" aria-hidden="true">
             <span className="auth-hero__halo" />
-            <Image
-              className="auth-hero__plant"
-              src="/brand/hero-plant.png?v=sprout-project-2"
-              alt=""
-              width={1024}
-              height={944}
-              priority
-              unoptimized
-            />
+            <BrandSprout className="auth-hero__plant" />
           </div>
 
           <div className="auth-hero__copy">
