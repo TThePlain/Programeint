@@ -1,0 +1,686 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  emailVerifiedAt       DateTime?
+  passwordHash          String
+  name                  String
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  disabledAt            DateTime?
+
+  profile               Profile?
+  sessions              Session[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
+  auditLogs             AuditLog[] @relation("AuditActor")
+  goals                 Goal[]
+  studyPreferences      StudyPreferences?
+  diagnosisSessions     DiagnosisSession[]
+  nodeMastery           NodeMastery[]
+  studySessions         StudySession[]
+  fsrsCards             FsrsCard[]
+  labWorkspaces         LabWorkspace[]
+  labRuns               LabRun[]
+  projectWorkspaces     ProjectWorkspace[]
+  projectRuns           ProjectRun[]
+  portfolioEvidence     PortfolioEvidence[]
+  githubAccount         GithubAccount?
+  tutorConversations    TutorConversation[]
+  calendarEvents        CalendarEvent[]
+  forumPosts            ForumPost[]
+  forumComments         ForumComment[]
+  forumSolutions        ForumSolution[]
+
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locale    String   @default("pt-BR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash        String    @unique
+  createdAt        DateTime  @default(now())
+  lastSeenAt       DateTime  @default(now())
+  expiresAt        DateTime
+  absoluteExpiresAt DateTime
+  revokedAt        DateTime?
+  ip               String?
+  userAgent        String?
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?
+  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String
+  entity      String?
+  entityId    String?
+  ip          String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Goal {
+  id                 String       @id @default(uuid())
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  statement          String
+  status             String       @default("active")
+  /// Objectivo em foco (mapa / estudar / vídeos / evolução) — só um por utilizador
+  isCurrent          Boolean      @default(false)
+  /// Tip do grafo (ex.: java-backend ou g-xxxx-tip)
+  tipNodeSlug        String?
+  /// none | generating | ready | failed
+  curriculumStatus   String       @default("none")
+  /// seeded | generated
+  curriculumSource   String?
+  curriculumNote     String?
+  /// Prefixo dos nós gerados (ex.: g-a1b2c3-) — null no currículo global
+  curriculumScope    String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  targets            GoalTarget[]
+  diagnosisSessions  DiagnosisSession[]
+  knowledgeNodes     KnowledgeNode[]
+
+  @@index([userId, status])
+  @@index([userId, isCurrent])
+  @@map("goals")
+}
+
+model GoalTarget {
+  id        String  @id @default(uuid())
+  goalId    String
+  goal      Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  slug      String
+  label     String
+  isPrimary Boolean @default(false)
+
+  @@unique([goalId, slug])
+  @@map("goal_targets")
+}
+
+model StudyPreferences {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experienceLevel       String
+  weeklyHours           Int
+  sessionMinutes        Int
+  prefersVideo          Boolean   @default(true)
+  prefersReading        Boolean   @default(true)
+  prefersPractice       Boolean   @default(true)
+  knownTopics           String[]  @default([])
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("study_preferences")
+}
+
+model KnowledgeNode {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  summary   String
+  area      String
+  sortOrder Int      @default(0)
+  /// null = currículo global (seed); preenchido = gerado para um objetivo
+  goalId    String?
+  goal      Goal?    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prerequisites     NodePrerequisite[] @relation("NodeHasPrereqs")
+  dependents        NodePrerequisite[] @relation("NodeIsPrereq")
+  questions         Question[]
+  mastery           NodeMastery[]
+  diagnosisAnswers  DiagnosisAnswer[]
+  diagnosisTargets  DiagnosisSession[]
+  learningModule    LearningModule?
+  studySessions     StudySession[]
+  labExercises      LabExercise[]
+  projectRequirements ProjectRequirement[]
+  tutorConversations TutorConversation[]
+  resources          ResourceNode[]
+  studyVideos       StudyVideo[]
+
+  @@index([goalId])
+  @@map("knowledge_nodes")
+}
+
+model StudyVideo {
+  id         String        @id @default(uuid())
+  nodeId     String
+  node       KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  title      String
+  channel    String
+  youtubeId  String
+  /** Se preenchido, o player abre a playlist completa (preferência). */
+  playlistId String?
+  language   String
+  sortOrder  Int           @default(0)
+  createdAt  DateTime      @default(now())
+
+  @@unique([nodeId, youtubeId])
+  @@index([nodeId, language])
+  @@map("study_videos")
+}
+
+model NodePrerequisite {
+  nodeId          String
+  node            KnowledgeNode @relation("NodeHasPrereqs", fields: [nodeId], references: [id], onDelete: Cascade)
+  prerequisiteId  String
+  prerequisite    KnowledgeNode @relation("NodeIsPrereq", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  nature          String        @default("required")
+
+  @@id([nodeId, prerequisiteId])
+  @@map("node_prerequisites")
+}
+
+model Question {
+  id              String   @id @default(uuid())
+  nodeId          String
+  node            KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  slug            String   @unique
+  prompt          String
+  code            String?
+  choices         Json
+  correctChoiceId String
+  explanation     String
+  kind            String   @default("diagnosis")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  answers         DiagnosisAnswer[]
+  checkModules    LearningModule[]
+  fsrsCards       FsrsCard[]
+
+  @@index([nodeId])
+  @@map("questions")
+}
+
+model DiagnosisSession {
+  id                 String    @id @default(uuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalId             String
+  goal               Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  targetNodeId       String
+  targetNode         KnowledgeNode @relation(fields: [targetNodeId], references: [id], onDelete: Restrict)
+  status             String    @default("in_progress")
+  currentQuestionId  String?
+  askedCount         Int       @default(0)
+  skippedNodeIds     String[]  @default([])
+  startedAt          DateTime  @default(now())
+  completedAt        DateTime?
+  answers            DiagnosisAnswer[]
+
+  @@index([userId, status])
+  @@map("diagnosis_sessions")
+}
+
+model DiagnosisAnswer {
+  id         String           @id @default(uuid())
+  sessionId  String
+  session    DiagnosisSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question         @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  nodeId     String
+  node       KnowledgeNode    @relation(fields: [nodeId], references: [id], onDelete: Restrict)
+  choiceId   String
+  isCorrect  Boolean
+  createdAt  DateTime         @default(now())
+
+  @@unique([sessionId, questionId])
+  @@map("diagnosis_answers")
+}
+
+model NodeMastery {
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nodeId          String
+  node            KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  status          String
+  knowledgeScore  Float         @default(0)
+  source          String
+  updatedAt       DateTime      @updatedAt
+
+  @@id([userId, nodeId])
+  @@map("node_mastery")
+}
+
+model LearningModule {
+  id               String        @id @default(uuid())
+  nodeId           String        @unique
+  node             KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  slug             String        @unique
+  title            String
+  summary          String
+  body             String
+  checkQuestionId  String
+  checkQuestion    Question      @relation(fields: [checkQuestionId], references: [id], onDelete: Restrict)
+  published        Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  sessions         StudySession[]
+
+  @@map("learning_modules")
+}
+
+model StudySession {
+  id               String         @id @default(uuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleId         String
+  module           LearningModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  nodeId           String
+  node             KnowledgeNode  @relation(fields: [nodeId], references: [id], onDelete: Restrict)
+  status           String         @default("in_progress")
+  readAt           DateTime?
+  checkAnsweredAt  DateTime?
+  checkCorrect     Boolean?
+  startedAt        DateTime       @default(now())
+  completedAt      DateTime?
+
+  @@index([userId, status])
+  @@map("study_sessions")
+}
+
+model FsrsCard {
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  due            DateTime
+  stability      Float
+  difficulty     Float
+  elapsedDays    Float    @default(0)
+  scheduledDays  Int      @default(0)
+  learningSteps  Int      @default(0)
+  reps           Int      @default(0)
+  lapses         Int      @default(0)
+  state          Int      @default(0)
+  lastReview     DateTime?
+  updatedAt      DateTime @updatedAt
+
+  @@id([userId, questionId])
+  @@index([userId, due])
+  @@map("fsrs_cards")
+}
+
+model LabExercise {
+  id            String         @id @default(uuid())
+  nodeId        String
+  node          KnowledgeNode  @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  slug          String         @unique
+  title         String
+  prompt        String
+  language      String         @default("java")
+  entryClass    String         @default("Check")
+  starterFiles  Json
+  hiddenFiles   Json
+  published     Boolean        @default(true)
+  timeoutMs     Int            @default(15000)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  workspaces    LabWorkspace[]
+  runs          LabRun[]
+
+  @@index([nodeId])
+  @@map("lab_exercises")
+}
+
+model LabWorkspace {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId  String
+  exercise    LabExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime    @updatedAt
+  files       LabFile[]
+  runs        LabRun[]
+
+  @@unique([userId, exerciseId])
+  @@map("lab_workspaces")
+}
+
+model LabFile {
+  workspaceId  String
+  workspace    LabWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  path         String
+  content      String
+  updatedAt    DateTime     @updatedAt
+
+  @@id([workspaceId, path])
+  @@map("lab_files")
+}
+
+model LabRun {
+  id           String        @id @default(uuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId   String
+  exercise     LabExercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  workspaceId  String?
+  workspace    LabWorkspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  status       String
+  passed       Boolean?
+  exitCode     Int?
+  stdout       String        @default("")
+  stderr       String        @default("")
+  errorCode    String?
+  startedAt    DateTime      @default(now())
+  finishedAt   DateTime?
+
+  @@index([userId, exerciseId])
+  @@map("lab_runs")
+}
+
+model PortfolioProject {
+  id            String               @id @default(uuid())
+  slug          String               @unique
+  title         String
+  brief         String
+  language      String               @default("java")
+  entryClass    String               @default("Check")
+  starterFiles  Json
+  hiddenFiles   Json
+  published     Boolean              @default(true)
+  timeoutMs     Int                  @default(20000)
+  sortOrder     Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  requirements  ProjectRequirement[]
+  workspaces    ProjectWorkspace[]
+  runs          ProjectRun[]
+  evidence      PortfolioEvidence[]
+
+  @@map("portfolio_projects")
+}
+
+model ProjectRequirement {
+  projectId String
+  project   PortfolioProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  nodeId    String
+  node      KnowledgeNode    @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, nodeId])
+  @@map("project_requirements")
+}
+
+model ProjectWorkspace {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     PortfolioProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime         @updatedAt
+  files       ProjectFile[]
+  runs        ProjectRun[]
+
+  @@unique([userId, projectId])
+  @@map("project_workspaces")
+}
+
+model ProjectFile {
+  workspaceId String
+  workspace   ProjectWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  path        String
+  content     String
+  updatedAt   DateTime         @updatedAt
+
+  @@id([workspaceId, path])
+  @@map("project_files")
+}
+
+model ProjectRun {
+  id           String             @id @default(uuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId    String
+  project      PortfolioProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workspaceId  String?
+  workspace    ProjectWorkspace?  @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  status       String
+  passed       Boolean?
+  exitCode     Int?
+  stdout       String             @default("")
+  stderr       String             @default("")
+  errorCode    String?
+  startedAt    DateTime           @default(now())
+  finishedAt   DateTime?
+  evidence     PortfolioEvidence?
+
+  @@index([userId, projectId])
+  @@map("project_runs")
+}
+
+model PortfolioEvidence {
+  id         String           @id @default(uuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId  String
+  project    PortfolioProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  runId      String           @unique
+  run        ProjectRun       @relation(fields: [runId], references: [id], onDelete: Restrict)
+  createdAt  DateTime         @default(now())
+
+  @@unique([userId, projectId])
+  @@map("portfolio_evidence")
+}
+
+model LearningResource {
+  id            String         @id @default(uuid())
+  slug          String         @unique
+  title         String
+  url           String
+  publisher     String
+  kind          String
+  license       String
+  language      String         @default("en")
+  summary       String
+  official      Boolean        @default(true)
+  published     Boolean        @default(true)
+  lastCheckedAt DateTime?
+  lastStatus    Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  nodes         ResourceNode[]
+
+  @@map("learning_resources")
+}
+
+model ResourceNode {
+  resourceId String
+  resource   LearningResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  nodeId     String
+  node       KnowledgeNode    @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@id([resourceId, nodeId])
+  @@index([nodeId])
+  @@map("resource_nodes")
+}
+
+model TutorConversation {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nodeId    String
+  node      KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  TutorMessage[]
+
+  @@unique([userId, nodeId])
+  @@map("tutor_conversations")
+}
+
+model TutorMessage {
+  id               String            @id @default(uuid())
+  conversationId   String
+  conversation     TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role             String
+  content          String
+  helpLevel        Int?
+  model            String?
+  promptTokens     Int?
+  completionTokens Int?
+  createdAt        DateTime          @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("tutor_messages")
+}
+
+model GithubAccount {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubUserId  String
+  login         String
+  tokenCipher   String
+  connectedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("github_accounts")
+}
+
+model CalendarEvent {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind             String
+  title            String
+  startsAt         DateTime
+  endsAt           DateTime
+  durationMinutes  Int
+  status           String    @default("planned")
+  source           String    @default("user")
+  focusedMinutes   Int?
+  notes            String?
+  href             String?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId, startsAt])
+  @@index([userId, status])
+  @@map("calendar_events")
+}
+
+/// Fórum: discussões, desafios de código e pedidos de ajuda entre alunos.
+model ForumPost {
+  id                  String   @id @default(uuid())
+  authorId            String
+  author              User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind                String
+  title               String
+  body                String
+  acceptanceCriteria  String?
+  language            String?
+  starterCode         String?
+  /// Testes ocultos (Check.java) — nunca enviados ao cliente.
+  checkCode           String?
+  entryClass          String?  @default("Check")
+  timeoutMs           Int      @default(20000)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  comments            ForumComment[]
+  solutions           ForumSolution[]
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
+  @@map("forum_posts")
+}
+
+model ForumComment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    ForumComment?  @relation("ForumCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   ForumComment[] @relation("ForumCommentThread")
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@map("forum_comments")
+}
+
+model ForumSolution {
+  id        String   @id @default(uuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  code      String
+  note      String?
+  status    String?
+  passed    Boolean?
+  exitCode  Int?
+  stdout    String?
+  stderr    String?
+  errorCode String?
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@map("forum_solutions")
+}

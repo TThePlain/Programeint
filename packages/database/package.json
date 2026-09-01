@@ -1,0 +1,26 @@
+{
+  "name": "@programeint/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "studio": "prisma studio",
+    "seed": "tsx src/seed.ts",
+    "library:check": "tsx src/library-check.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"no db unit tests\"",
+    "lint": "echo \"lint skipped for database\""
+  },
+  "dependencies": {
+    "@prisma/client": "6.14.0"
+  },
+  "devDependencies": {
+    "prisma": "6.14.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
