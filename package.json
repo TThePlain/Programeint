@@ -1,0 +1,39 @@
+{
+  "name": "programeint",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Plataforma de formação tecnológica adaptativa",
+  "license": "MIT",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @programeint/web test:e2e",
+    "db:generate": "pnpm --filter @programeint/database generate",
+    "db:migrate": "pnpm --filter @programeint/database migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @programeint/database migrate:deploy",
+    "db:seed": "pnpm --filter @programeint/database seed",
+    "library:check": "pnpm --filter @programeint/database library:check",
+    "orphan-check": "node scripts/orphan-check.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "argon2",
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "unrs-resolver"
+    ]
+  }
+}
