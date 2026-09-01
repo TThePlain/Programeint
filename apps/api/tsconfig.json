@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "noEmit": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*.ts"]
+}
