@@ -786,10 +786,8 @@ h3 { font-size: 1.15rem; margin: 0 0 var(--space-2); font-family: var(--font-san
   height: auto !important;
   max-height: 260px;
   display: block;
-  margin-inline: auto;
-  color: var(--moss-deep, #2f5d3a);
-}
   margin: 0 auto;
+  color: var(--moss-deep, #2f5d3a);
   object-fit: contain;
   object-position: center bottom;
   animation: mark-breathe 10s ease-in-out infinite;
