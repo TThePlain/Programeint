@@ -2,46 +2,58 @@
 
 **programa + mente** — plataforma open source de formação tecnológica adaptativa.
 
-Foco: **tecnologia, programação, IA e mercado tech**. Cada aluno define objectivos, recebe um plano de estudo, pratica em labs, acompanha o mapa e participa na comunidade.
+Aprende **qualquer linguagem de programação**, stack ou ferramenta tech: o plano, o mapa, a prática e os **acessórios do ofício** (IDE, Git, framework, testes, deploy…) adaptam-se ao objectivo que escolheres — não é uma escola só de Java.
 
 Idioma do produto: **português do Brasil**. Licença: [MIT](LICENSE).
 
 Repositório: [github.com/TThePlain/Programeint](https://github.com/TThePlain/Programeint)
 
----
-
-## O que é
-
-Software real (sem ecrãs fake): autenticação, onboarding, diagnóstico, currículo por objectivo, estudo com verificação, labs, agenda, biblioteca, tutor (com chave), fórum, news tech e conta com exportação/apagamento de dados.
-
-| Área | Para quem | Escopo |
-|------|-----------|--------|
-| Objectivos e plano | Aluno autenticado | **Por utilizador** — cada conta tem os seus objectivos e o plano gerado a partir deles |
-| Mapa / estudo / prática / labs | Aluno autenticado | **Do objectivo em foco** do utilizador logado |
-| Progresso e mastery | Aluno autenticado | **Por utilizador** |
-| Fórum | Qualquer utilizador logado | **Comunidade** — todos vêem e interagem |
-| News | Público | Feed global do ramo tech |
-| Conta | Dono da sessão | Privado (exportar / apagar) |
+> Este projecto foi **estruturado e desenvolvido com apoio de IA**, sob direcção humana: arquitectura em monorepo, contratos reais, testes e produto utilizável — não um protótipo descartável.
 
 ---
 
-## Funcionalidades
+## Visão
 
-- **Auth** — registo, verificação de e-mail, login com sessão httpOnly, recuperação de senha
-- **Onboarding** — objectivo, nível, ritmo; vários objectivos com um em foco
-- **Diagnóstico** — posicionamento no grafo do objectivo
-- **Mapa de estudo** — etapas sequenciais, progresso, vídeos por língua (PT/EN/ES)
-- **Estudar** — módulos com leitura e verificação
-- **Prática / Lab** — exercícios guiados e Java em sandbox Docker
-- **Agenda** — sessões e foco do dia
-- **Biblioteca** — recursos legais ligados ao teu grafo
-- **Fórum** — posts, comentários e soluções (comunidade logada)
-- **News** — RSS tech agregado
-- **Tutor** — ajuda contextual (requer `AI_API_KEY`)
-- **GitHub** — OAuth + evidência (requer `GITHUB_CLIENT_*`)
-- **Conta** — export JSON e delete com confirmação
+| Princípio | Significado |
+|-----------|-------------|
+| **Multi-linguagem** | Java, Python, JavaScript/TypeScript, Go, Rust, C#, Kotlin, PHP, SQL, web, stacks (React, Node, Spring…) e temas tech (DevOps, cloud, ML, segurança…) |
+| **Ferramentas da escolha** | Cada plano inclui fundamentos, conceitos, **ambiente/ferramentas**, prática, padrões, projecto e fecho alinhados à linguagem/stack escolhida |
+| **Plano por aluno** | Objectivos, mapa e progresso são do utilizador logado |
+| **Comunidade** | Fórum partilhado entre quem está autenticado |
+| **Software real** | Sem ecrãs falsos; integrações sem chave ficam `BLOCKED` / `CONFIGURATION_REQUIRED` |
 
-Estado detalhado: [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
+---
+
+## O que a plataforma faz
+
+- **Auth** — registo, verificação de e-mail, sessão httpOnly, recuperação de senha  
+- **Onboarding** — objectivo (linguagem/stack/ferramenta), nível, ritmo; vários objectivos com um em foco  
+- **Currículo** — grafo curado (ex.: trilha Java backend) **ou** mapa **gerado** para o teu objectivo (com módulos, checks, vídeos e prática guiada)  
+- **Diagnóstico e mapa** — posicionamento e progresso no teu plano  
+- **Estudar** — lições com verificação  
+- **Prática / Lab** — exercícios guiados; sandbox Docker executável para Java (outras linguagens: prática guiada no mapa gerado; runners multi-runtime em evolução)  
+- **Agenda, biblioteca, fórum, news**  
+- **Tutor** (com `AI_API_KEY`) · **GitHub** (com `GITHUB_CLIENT_*`) · **Conta** (exportar / apagar)
+
+---
+
+## Estrutura do monorepo
+
+```
+programeint/
+├── apps/web          # Next.js 15 — UI
+├── apps/api          # NestJS 11 — API
+├── packages/database # Prisma + seed
+├── packages/shared   # Tipos, Zod, catálogo de objectivos e carreiras
+├── docs/             # Arquitectura, API, ADRs, testes, deploy
+└── docker-compose.yml
+```
+
+Cada objectivo do aluno resolve um **currículo** (seed ou gerado) com etapas fixas de programa:
+
+1. Fundamentos → 2. Conceitos → 3. **Ferramentas / ambiente** → 4. Prática → 5. Padrões → 6. Projecto → 7. Fecho  
+
+O perfil de carreira (`packages/shared` → `dev-career`) injeta framework, complementos full-stack e **work tools** (Git, IDE, CI…) conforme a linguagem escolhida.
 
 ---
 
@@ -52,30 +64,21 @@ Estado detalhado: [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
 | `apps/web` | Next.js 15 (App Router) |
 | `apps/api` | NestJS 11 |
 | `packages/database` | PostgreSQL + Prisma |
-| `packages/shared` | Tipos, schemas Zod, domínio partilhado |
+| `packages/shared` | Tipos e domínio partilhado |
 
-Também: pnpm + Turborepo · Redis (rate limit / cache) · Mailpit (dev) · Docker (Postgres, Redis, sandbox Java Temurin 21).
-
----
-
-## Requisitos locais
-
-- Node.js **22+**
-- pnpm **10+**
-- Docker (Postgres 16, Redis 7, Mailpit) **ou** serviços equivalentes
-- JDK 21 (lab Java local)
-- Imagem `eclipse-temurin:21-jdk-alpine` (`docker pull`) para o lab
+pnpm + Turborepo · Redis · Mailpit (dev) · Docker (Postgres, Redis, sandbox Temurin 21 para labs Java).
 
 ---
 
-## Arranque rápido
+## Arranque local
+
+**Requisitos:** Node.js 22+, pnpm 10+, Docker (ou Postgres/Redis equivalentes). JDK 21 + imagem `eclipse-temurin:21-jdk-alpine` para labs Java.
 
 ```bash
 git clone https://github.com/TThePlain/Programeint.git
 cd Programeint
 
 docker compose -f docker-compose.yml up -d
-
 cp .env.example .env
 # SESSION_SECRET=$(openssl rand -hex 32)
 
@@ -89,13 +92,8 @@ pnpm dev
 | Serviço | URL |
 |---------|-----|
 | Web | http://localhost:3000 |
-| API (directa) | http://127.0.0.1:4000/api/health |
-| API via proxy Next | http://localhost:3000/api/health |
+| API | http://127.0.0.1:4000/api/health |
 | Mailpit | http://127.0.0.1:8025 |
-
-Se já tens Postgres/Redis locais, omite o Compose e configura `DATABASE_URL` / `REDIS_URL` no `.env`.
-
-Verificar links da biblioteca:
 
 ```bash
 pnpm library:check
@@ -103,28 +101,27 @@ pnpm library:check
 
 ---
 
+## Caminho para cobertura completa (multi-linguagem)
+
+O núcleo (auth, objectivos, mapa gerado, estudo, fórum, conta) já serve **qualquer objectivo do catálogo**. Para ficar “100%” no sentido de **paridade com a trilha Java em todas as linguagens**:
+
+1. **Sandbox multi-runtime** — runners Docker para Python, Node/TS, Go, etc. (hoje o executável é Java; o resto usa prática guiada)  
+2. **Labs e projectos gerados por linguagem** — starters + testes ocultos, não só markdown  
+3. **Biblioteca e vídeos** indexados por linguagem/stack, não só nós do seed Java  
+4. **Deploy de produção** com TLS e secrets reais (`AI_API_KEY`, `GITHUB_CLIENT_*`)  
+5. **Notificações / rotina** além da agenda local  
+
+Contribuições nestes eixos são especialmente bem-vindas.
+
+---
+
 ## Como colaborar
 
-1. Lê [CONTRIBUTING.md](CONTRIBUTING.md) e o [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-2. Abre uma issue ou escolhe uma existente
-3. Branch a partir de `main`: `feat/…`, `fix/…`, `docs/…`
-4. Um tema por PR; sem funcionalidade falsa
-5. Corre o que tocaste (`pnpm typecheck`, testes relevantes)
-6. Abre o PR com resumo + plano de teste
+1. [CONTRIBUTING.md](CONTRIBUTING.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) · [SECURITY.md](SECURITY.md)  
+2. Issue → branch `feat/…` | `fix/…` | `docs/…` → PR pequeno  
+3. Sem funcionalidade falsa; secrets só em `.env`  
 
-### Bom para começar
-
-- UI / acessibilidade
-- Docs e setup
-- Recursos da biblioteca (`pnpm library:check`)
-- Labs e fórum
-- Testes e tipagem
-
-### Segurança
-
-Não commits de secrets (`.env` está no `.gitignore`). Vulnerabilidades: [SECURITY.md](SECURITY.md).
-
-Integrações sem credencial ficam `BLOCKED` / `CONFIGURATION_REQUIRED` — ver [.env.example](.env.example).
+Ideias boas para começar: UI/a11y, docs, recursos da biblioteca, labs noutras linguagens, testes.
 
 ---
 
@@ -133,20 +130,10 @@ Integrações sem credencial ficam `BLOCKED` / `CONFIGURATION_REQUIRED` — ver 
 | Doc | Conteúdo |
 |-----|----------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitectura |
-| [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) | Estado actual |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy |
 | [docs/TESTING.md](docs/TESTING.md) | Testes |
 | [docs/api/](docs/api/) | Contratos da API |
 | [docs/decisions/](docs/decisions/) | ADRs |
-
----
-
-## Princípios
-
-1. **Nada de funcionalidade falsa** — botões e páginas fazem o que prometem
-2. **Plano por aluno** — mapa e progresso seguem o objectivo do utilizador logado
-3. **Fórum aberto à comunidade autenticada** — interação entre alunos
-4. **Open source para alunos e profissionais** — PRs pequenos e honestos
 
 ---
 

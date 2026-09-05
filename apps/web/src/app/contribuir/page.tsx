@@ -14,8 +14,9 @@ export default function ContribuirPage() {
         <p className="contribute-page__eyebrow">Código aberto</p>
         <h1 className="contribute-page__h1">Ajuda a melhorar o Programeint</h1>
         <p className="muted contribute-page__lede">
-          Esta plataforma é open source — feita para quem estuda e para quem trabalha em tech.
-          Podes reportar bugs, melhorar docs, acrescentar labs ou evoluir a UI.
+          Esta plataforma é open source — para aprender <strong>qualquer linguagem ou stack</strong>,
+          com plano, ferramentas e prática alinhados ao objectivo. Podes reportar bugs, melhorar
+          docs, acrescentar labs noutras runtimes ou evoluir a UI.
         </p>
       </header>
 

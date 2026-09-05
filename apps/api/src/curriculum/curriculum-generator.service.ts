@@ -22,16 +22,37 @@ import { clearGoalGraph } from "./clear-goal-graph";
 const STAGE_QUERY: Record<string, string> = {
   fundamentos: "fundamentals introduction overview",
   "conceitos-core": "core concepts explained",
-  ferramentas: "setup tools environment install IDE",
+  ferramentas: "setup tools environment install IDE package manager",
   "pratica-guiada": "exercises practice tutorial",
-  "stack-framework": "framework ecosystem Spring Boot tutorial",
-  "fullstack-complementos": "full stack complementary SQL Docker frontend",
+  "stack-framework": "framework ecosystem tutorial",
+  "fullstack-complementos": "full stack complementary database docker frontend",
   padroes: "best practices patterns",
   "soft-skills": "software engineer soft skills code review meetings standup",
   "carreira-realidade": "day in the life software developer meetings",
   projecto: "project tutorial build portfolio",
   tip: "learning path career checklist",
 };
+
+function stageSearchQuery(
+  nodeKey: string,
+  topicLabel: string,
+  career: ReturnType<typeof resolveDevCareer>,
+): string {
+  if (nodeKey === "stack-framework" && career?.researchHints.framework) {
+    return `${topicLabel} ${career.researchHints.framework}`.slice(0, 100);
+  }
+  if (nodeKey === "fullstack-complementos" && career?.researchHints.fullstack) {
+    return `${topicLabel} ${career.researchHints.fullstack}`.slice(0, 100);
+  }
+  if (nodeKey === "ferramentas" && career?.workTools.length) {
+    const tools = career.workTools
+      .slice(0, 3)
+      .map((t) => t.name)
+      .join(" ");
+    return `${topicLabel} ${tools} setup`.slice(0, 100);
+  }
+  return `${topicLabel} ${STAGE_QUERY[nodeKey] ?? "basics"}`.slice(0, 100);
+}
 
 function dedupeHits(hits: WebHit[], limit: number): WebHit[] {
   const seen = new Set<string>();
@@ -77,7 +98,7 @@ export class CurriculumGeneratorService {
             curriculumStatus: "ready",
             curriculumSource: "seeded",
             curriculumScope: null,
-            curriculumNote: "Currículo Java Backend publicado (seed).",
+            curriculumNote: "Currículo Java Backend publicado (seed de referência).",
           },
         });
         return;
@@ -318,7 +339,7 @@ export class CurriculumGeneratorService {
     for (const node of plan.nodes) {
       try {
         const q1 = `${plan.topicLabel} ${node.title}`.slice(0, 100);
-        const q2 = `${plan.topicLabel} ${STAGE_QUERY[node.key] ?? "basics"}`.slice(0, 100);
+        const q2 = stageSearchQuery(node.key, plan.topicLabel, career);
         const [wiki, hitsA, hitsB] = await Promise.all([
           wikiExtract(q1).catch(() => null),
           searchWeb(q1, 4).catch(() => [] as WebHit[]),

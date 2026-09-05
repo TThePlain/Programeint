@@ -561,21 +561,21 @@ export function resolveDevCareer(
   const slug = (primarySlug ?? "").toLowerCase();
   if (DEV_CAREER_PROFILES[slug]) return DEV_CAREER_PROFILES[slug]!;
 
-  // Atalhos do catálogo → perfil de carreira
+  // Atalhos do catálogo → perfil de carreira (neutros — sem forçar Java)
   const alias: Record<string, string> = {
     react: "javascript",
     nodejs: "javascript",
     spring: "java",
-    backend: "java",
+    backend: "java", // default empresarial comum; o statement pode sobrescrever abaixo
     frontend: "javascript",
     fullstack: "javascript",
     mobile: "kotlin",
     php: "web",
-    algorithms: "java",
+    algorithms: "python",
     databases: "sql",
-    oop: "java",
+    oop: "python",
     linux: "devops",
-    testing: "java",
+    testing: "javascript",
     design: "web",
   };
   if (alias[slug] && DEV_CAREER_PROFILES[alias[slug]!]) {

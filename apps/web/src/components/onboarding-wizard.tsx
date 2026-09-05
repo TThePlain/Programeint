@@ -34,7 +34,7 @@ export function OnboardingWizard({ initial }: Props) {
 
   const [statement, setStatement] = useState(initial?.goal?.statement ?? "");
   const [primaryTarget, setPrimaryTarget] = useState<GoalSlug | "">(
-    (initial?.goal?.primaryTarget?.slug as GoalSlug | undefined) ?? "java",
+    (initial?.goal?.primaryTarget?.slug as GoalSlug | undefined) ?? "",
   );
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | "">(
     (initial?.preferences?.experienceLevel as ExperienceLevel | undefined) ?? "",

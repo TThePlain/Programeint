@@ -56,8 +56,7 @@ Alternativa: se já usas serviços locais (`programeint-services`), podes omitir
 
 - Bugs de UI / acessibilidade
 - Docs e exemplos de setup
-- Novos recursos legais na biblioteca (`pnpm library:check`)
-- Exercícios de lab / fórum
+- Novos labs / runners (Python, Node, Go…) e recursos na biblioteca (`pnpm library:check`)
 - Testes e tipagem
 
 ## Estrutura

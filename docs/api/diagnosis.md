@@ -6,6 +6,9 @@
 | POST | `/api/diagnosis/sessions/:id/answers` | sessão | 201 feedback + próxima questão ou conclusão | 400 questão errada, 401 |
 | GET | `/api/roadmap` | sessão | 200 nós + estados de evidência | 401 |
 
-O diagnóstico só existe para alvos com currículo publicado (agora: **Java**). Outros alvos devolvem `available: false` — não há perguntas inventadas.
+O diagnóstico e o mapa seguem o **objectivo em foco** do aluno:
+
+- Trilha **seed** (ex.: Java backend) — grafo curado partilhado  
+- Outros objectivos do catálogo — currículo **gerado** por objectivo (fundamentos → ferramentas → prática → projecto), com checks e diagnóstico alinhados ao tema  
 
 Estados no mapa: `unassessed` | `passed` | `failed` | `skipped`. `skipped` = pré-requisito falhado; o aluno pode na mesma ver o nó.

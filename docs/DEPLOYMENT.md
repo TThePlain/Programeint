@@ -1,56 +1,62 @@
 # Deploy
 
-## Ambientes
+## Vercel (frontend / `apps/web`)
 
-| Ambiente | Onde | Estado |
-|---|---|---|
-| development | localhost (Postgres/Redis locais + Mailpit Docker) | ativo nesta máquina |
-| test | `programeint_test` + Playwright | CI + local |
-| app compose | `docker-compose.yml` + `docker-compose.app.yml` | imagens API/Web; **não** é TLS de produção |
-| production | domínio + TLS + secrets | `BLOCKED/CONFIGURATION_REQUIRED` |
+O site Next.js pode ser publicado na [Vercel](https://vercel.com). A **API NestJS** (`apps/api`) **não** corre na Vercel — precisa de um host com Node contínuo (Railway, Render, Fly.io, VPS) + Postgres + Redis.
 
-## Desenvolvimento nesta máquina
+### 1. Preparar o monorepo
 
-Serviços locais (sem Docker Desktop; Homebrew oficial exigia admin):
+No dashboard Vercel (Import Git Repository → `TThePlain/Programeint`):
 
-- PostgreSQL 16 em `~/.local/pgsql` — `programeint-services start`
-- Redis 8 em `~/.local/bin`
-- Mailpit container via Lima
-- Docker daemon: Lima VM `docker` (Ubuntu 26.04)
+| Setting | Valor |
+|---------|--------|
+| Framework Preset | Next.js |
+| Root Directory | `apps/web` |
+| Install Command | `cd ../.. && pnpm install --frozen-lockfile` |
+| Build Command | `cd ../.. && pnpm --filter @programeint/web build` |
+| Node.js | 22.x |
 
-`docker-compose.yml` descreve a via reproduzível para outras máquinas com Docker.
-
-## Stack app em contentores (staging local)
+Ou via CLI (na pasta `apps/web`):
 
 ```bash
-# infra
-docker compose up -d postgres redis mailpit
-
-# API + Web (build a partir da raiz do monorepo)
-docker compose -f docker-compose.yml -f docker-compose.app.yml up --build
+npx vercel@latest login
+npx vercel@latest link
+npx vercel@latest --prod
 ```
 
-- API: `apps/api/Dockerfile` → porta 4000, health `/api/health`
-- Web: `apps/web/Dockerfile` → porta 3000
-- Antes do primeiro arranque da API: correr migrações (`pnpm db:migrate:deploy`) contra a mesma `DATABASE_URL`
+### 2. Variáveis de ambiente (Web)
 
-Isto **não** substitui produção: sem TLS terminado, sem secret manager, sem SMTP real.
+| Variável | Exemplo | Notas |
+|----------|---------|--------|
+| `API_URL` | `https://api.teu-dominio.com` | URL pública da API Nest (sem barra final) |
+| `APP_URL` | `https://teu-projecto.vercel.app` | Domínio do site (CORS + links de e-mail na API) |
 
-## Produção (ainda não)
+Sem `API_URL` apontando para uma API no ar, a landing abre mas login/mapa/fórum falham.
 
-Falta: conta cloud, domínio, TLS, SMTP real, backups, observabilidade hospedada.
+### 3. API em produção (obrigatório para a plataforma completa)
 
-Estratégia prevista (não fingir que está no ar):
+1. Deploy `apps/api` noutro serviço com `DATABASE_URL`, `REDIS_URL`, `SESSION_SECRET`, SMTP real  
+2. `APP_URL` = URL da Vercel; CORS já usa `APP_URL`  
+3. `pnpm db:migrate:deploy` + `pnpm db:seed` na base de produção  
+4. Definir `API_URL` na Vercel e redesploy  
 
-1. Imagens Docker da API e do web (`apps/*/Dockerfile`)
-2. Migrações Prisma no release (`pnpm db:migrate:deploy`)
-3. Health check `/api/health/ready`
-4. Rollback: imagem anterior + migrate down só se a migração for reversível; senão expand/contract
+### 4. Cookies / sessão
+
+Login grava cookie httpOnly no domínio da Vercel (Server Action). Pedidos `/api/*` no browser são reescritos para `API_URL` — a API deve aceitar `Origin` = `APP_URL` com `credentials: true`.
+
+## Ambientes locais
+
+| Ambiente | Como |
+|---|---|
+| development | `docker-compose.yml` + `pnpm dev` |
+| staging local | `docker-compose.yml` + `docker-compose.app.yml` |
+| production web | Vercel |
+| production API | host Node + Postgres + Redis |
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`): install → generate → migrate deploy → orphan-check → typecheck → test → build.
+GitHub Actions (`.github/workflows/ci.yml`): install → generate → migrate → orphan-check → typecheck → test → build.
 
 ## Secrets
 
-Nunca commitados. `.env` local gitignored. Produção: secret manager.
+Nunca no Git. `.env` local gitignored. Produção: env da Vercel + secret manager do host da API.
